@@ -99,7 +99,7 @@ namespace MyProject.Admin.Api
                             TokenUrl = new Uri($"{adminApiConfiguration.IdentityServerBaseUrl}/connect/token"),
                             Scopes = new Dictionary<string, string> {
                                 { adminApiConfiguration.OidcApiName, adminApiConfiguration.ApiName }
-                            }
+                            }                             
                         }
                     }
                 });
@@ -114,7 +114,7 @@ namespace MyProject.Admin.Api
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AdminApiConfiguration adminApiConfiguration)
         {
      
-            app.UsePathBase(Configuration.GetValue<string>("BasePath"));
+           app.UsePathBase(Configuration.GetValue<string>($"{adminApiConfiguration.ApiBaseUrl}"));
             app.AddForwardHeaders();
 
             if (env.IsDevelopment())

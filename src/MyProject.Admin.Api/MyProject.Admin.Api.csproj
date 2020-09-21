@@ -67,6 +67,8 @@
         </EmbeddedResource>
     </ItemGroup>
 
+    <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="http://json.schemastore.org/apibuilder.json" /></VisualStudio></ProjectExtensions>
+
 </Project>
 
 
