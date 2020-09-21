@@ -1,11 +1,11 @@
 ﻿{
     "Serilog": {
-        "MinimumLevel": {
-            "Default": "Error",
-            "Override": {
-                "Skoruba": "Information"
-            }
-        },
+      "MinimumLevel": {
+        "Default": "Debug",
+        "Override": {
+          "Skoruba": "Debug"
+        }
+      },
         "WriteTo": [
             {
                 "Name": "Console"

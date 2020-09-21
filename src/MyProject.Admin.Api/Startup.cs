@@ -113,6 +113,8 @@ namespace MyProject.Admin.Api
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AdminApiConfiguration adminApiConfiguration)
         {
+     
+            app.UsePathBase(Configuration.GetValue<string>("BasePath"));
             app.AddForwardHeaders();
 
             if (env.IsDevelopment())

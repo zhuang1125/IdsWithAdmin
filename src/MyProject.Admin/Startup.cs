@@ -94,6 +94,8 @@ namespace MyProject.Admin
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+
+            
             app.UseCookiePolicy();
 
             if (env.IsDevelopment())
