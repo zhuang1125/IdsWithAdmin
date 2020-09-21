@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Threading.Tasks;
-using IdentityServer4.EntityFramework.Options;
+﻿using IdentityServer4.EntityFramework.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -19,6 +16,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MyProject.Admin.Configuration;
+using MyProject.Admin.Configuration.ApplicationParts;
+using MyProject.Admin.Configuration.Constants;
+using MyProject.Admin.Configuration.Interfaces;
+using MyProject.Admin.EntityFramework.Shared.Configuration;
+using MyProject.Admin.EntityFramework.SqlServer.Extensions;
+using MyProject.Admin.ExceptionHandling;
+using MyProject.Admin.Helpers.Localization;
+using MyProject.Shared.Authentication;
 using Skoruba.AuditLogging.EntityFramework.DbContexts;
 using Skoruba.AuditLogging.EntityFramework.Entities;
 using Skoruba.AuditLogging.EntityFramework.Extensions;
@@ -27,24 +33,15 @@ using Skoruba.AuditLogging.EntityFramework.Services;
 using Skoruba.IdentityServer4.Admin.BusinessLogic.Identity.Dtos.Identity;
 using Skoruba.IdentityServer4.Admin.BusinessLogic.Services;
 using Skoruba.IdentityServer4.Admin.BusinessLogic.Services.Interfaces;
-using MyProject.Admin.ExceptionHandling;
-using MyProject.Admin.Configuration;
-using MyProject.Admin.Configuration.ApplicationParts;
-using MyProject.Admin.Configuration.Constants;
-using MyProject.Admin.Configuration.Interfaces;
+using Skoruba.IdentityServer4.Admin.EntityFramework.Helpers;
 using Skoruba.IdentityServer4.Admin.EntityFramework.Interfaces;
 using Skoruba.IdentityServer4.Admin.EntityFramework.Repositories;
 using Skoruba.IdentityServer4.Admin.EntityFramework.Repositories.Interfaces;
-using MyProject.Admin.Helpers.Localization;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using MyProject.Admin.EntityFramework.MySql.Extensions;
-using MyProject.Admin.EntityFramework.Shared.Configuration;
-using MyProject.Admin.EntityFramework.SqlServer.Extensions;
-using MyProject.Admin.EntityFramework.PostgreSQL.Extensions;
-using Skoruba.IdentityServer4.Admin.EntityFramework.Helpers;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
-using MyProject.Shared.Authentication;
-using MyProject.Shared.Configuration.Identity;
+using System.Threading.Tasks;
 
 namespace MyProject.Admin.Helpers
 {
@@ -111,12 +108,12 @@ namespace MyProject.Admin.Helpers
                 case DatabaseProviderType.SqlServer:
                     services.RegisterSqlServerDbContexts<TIdentityDbContext, TConfigurationDbContext, TPersistedGrantDbContext, TLogDbContext, TAuditLoggingDbContext, TDataProtectionDbContext>(identityConnectionString, configurationConnectionString, persistedGrantsConnectionString, errorLoggingConnectionString, auditLoggingConnectionString, dataProtectionConnectionString);
                     break;
-                case DatabaseProviderType.PostgreSQL:
-                    services.RegisterNpgSqlDbContexts<TIdentityDbContext, TConfigurationDbContext, TPersistedGrantDbContext, TLogDbContext, TAuditLoggingDbContext, TDataProtectionDbContext>(identityConnectionString, configurationConnectionString, persistedGrantsConnectionString, errorLoggingConnectionString, auditLoggingConnectionString, dataProtectionConnectionString);
-                    break;
-                case DatabaseProviderType.MySql:
-                    services.RegisterMySqlDbContexts<TIdentityDbContext, TConfigurationDbContext, TPersistedGrantDbContext, TLogDbContext, TAuditLoggingDbContext, TDataProtectionDbContext>(identityConnectionString, configurationConnectionString, persistedGrantsConnectionString, errorLoggingConnectionString, auditLoggingConnectionString, dataProtectionConnectionString);
-                    break;
+                //case DatabaseProviderType.PostgreSQL:
+                //    services.RegisterNpgSqlDbContexts<TIdentityDbContext, TConfigurationDbContext, TPersistedGrantDbContext, TLogDbContext, TAuditLoggingDbContext, TDataProtectionDbContext>(identityConnectionString, configurationConnectionString, persistedGrantsConnectionString, errorLoggingConnectionString, auditLoggingConnectionString, dataProtectionConnectionString);
+                //    break;
+                //case DatabaseProviderType.MySql:
+                //    services.RegisterMySqlDbContexts<TIdentityDbContext, TConfigurationDbContext, TPersistedGrantDbContext, TLogDbContext, TAuditLoggingDbContext, TDataProtectionDbContext>(identityConnectionString, configurationConnectionString, persistedGrantsConnectionString, errorLoggingConnectionString, auditLoggingConnectionString, dataProtectionConnectionString);
+                //    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(databaseProvider.ProviderType), $@"The value needs to be one of {string.Join(", ", Enum.GetNames(typeof(DatabaseProviderType)))}.");
             }
@@ -493,30 +490,30 @@ namespace MyProject.Admin.Helpers
                             .AddSqlServer(dataProtectionDbConnectionString, name: "DataProtectionDb",
                                 healthQuery: $"SELECT TOP 1 * FROM dbo.[{dataProtectionTableName}]");
                         break;
-                    case DatabaseProviderType.PostgreSQL:
-                        healthChecksBuilder
-                            .AddNpgSql(configurationDbConnectionString, name: "ConfigurationDb",
-                                healthQuery: $"SELECT * FROM \"{configurationTableName}\" LIMIT 1")
-                            .AddNpgSql(persistedGrantsDbConnectionString, name: "PersistentGrantsDb",
-                                healthQuery: $"SELECT * FROM \"{persistedGrantTableName}\" LIMIT 1")
-                            .AddNpgSql(identityDbConnectionString, name: "IdentityDb",
-                                healthQuery: $"SELECT * FROM \"{identityTableName}\" LIMIT 1")
-                            .AddNpgSql(logDbConnectionString, name: "LogDb",
-                                healthQuery: $"SELECT * FROM \"{logTableName}\" LIMIT 1")
-                            .AddNpgSql(auditLogDbConnectionString, name: "AuditLogDb",
-                                healthQuery: $"SELECT * FROM \"{auditLogTableName}\"  LIMIT 1")
-                            .AddNpgSql(dataProtectionDbConnectionString, name: "DataProtectionDb",
-                                healthQuery: $"SELECT * FROM \"{dataProtectionTableName}\"  LIMIT 1");
-                        break;
-                    case DatabaseProviderType.MySql:
-                        healthChecksBuilder
-                            .AddMySql(configurationDbConnectionString, name: "ConfigurationDb")
-                            .AddMySql(persistedGrantsDbConnectionString, name: "PersistentGrantsDb")
-                            .AddMySql(identityDbConnectionString, name: "IdentityDb")
-                            .AddMySql(logDbConnectionString, name: "LogDb")
-                            .AddMySql(auditLogDbConnectionString, name: "AuditLogDb")
-                            .AddMySql(dataProtectionDbConnectionString, name: "DataProtectionDb");
-                        break;
+                    //case DatabaseProviderType.PostgreSQL:
+                    //    healthChecksBuilder
+                    //        .AddNpgSql(configurationDbConnectionString, name: "ConfigurationDb",
+                    //            healthQuery: $"SELECT * FROM \"{configurationTableName}\" LIMIT 1")
+                    //        .AddNpgSql(persistedGrantsDbConnectionString, name: "PersistentGrantsDb",
+                    //            healthQuery: $"SELECT * FROM \"{persistedGrantTableName}\" LIMIT 1")
+                    //        .AddNpgSql(identityDbConnectionString, name: "IdentityDb",
+                    //            healthQuery: $"SELECT * FROM \"{identityTableName}\" LIMIT 1")
+                    //        .AddNpgSql(logDbConnectionString, name: "LogDb",
+                    //            healthQuery: $"SELECT * FROM \"{logTableName}\" LIMIT 1")
+                    //        .AddNpgSql(auditLogDbConnectionString, name: "AuditLogDb",
+                    //            healthQuery: $"SELECT * FROM \"{auditLogTableName}\"  LIMIT 1")
+                    //        .AddNpgSql(dataProtectionDbConnectionString, name: "DataProtectionDb",
+                    //            healthQuery: $"SELECT * FROM \"{dataProtectionTableName}\"  LIMIT 1");
+                    //    break;
+                    //case DatabaseProviderType.MySql:
+                    //    healthChecksBuilder
+                    //        .AddMySql(configurationDbConnectionString, name: "ConfigurationDb")
+                    //        .AddMySql(persistedGrantsDbConnectionString, name: "PersistentGrantsDb")
+                    //        .AddMySql(identityDbConnectionString, name: "IdentityDb")
+                    //        .AddMySql(logDbConnectionString, name: "LogDb")
+                    //        .AddMySql(auditLogDbConnectionString, name: "AuditLogDb")
+                    //        .AddMySql(dataProtectionDbConnectionString, name: "DataProtectionDb");
+                    //    break;
                     default:
                         throw new NotImplementedException($"Health checks not defined for database provider {databaseProvider.ProviderType}");
                 }
